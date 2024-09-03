@@ -30,6 +30,12 @@ io.on('connection', (socket: Socket) => {
         console.log(`Username set for ${socket.id}: ${username}`);
     });
 
+    socket.on('broadcast', () => {
+        const joinedUser = users.get(socket.id) || 'Anonymous';
+        console.log(joinedUser);
+        io.emit('broadcast', { joinedUserData: joinedUser });
+    })
+
     socket.on('chat message', (message: string) => {
         const userName = users.get(socket.id) || 'Anonymous';
         const jsonData = {userName, message};
