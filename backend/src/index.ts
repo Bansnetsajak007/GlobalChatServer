@@ -1,10 +1,11 @@
 /*
     TO-DOS:
-    1)Broad cast to server when new user joins
-    2) feature to leave golbal chat room
-    3)feature to create own room
-    4) load previous chats (store in database)
+    1)Broad cast to server when new user joins ✅
+    2) feature to leave golbal chat room (redirect to home page) ✅
+    3)feature to create own room garo xa yrrrrr
+    4) load previous chats (store in database) garo xa yrrrrr
     5)feature to see joined users in room (just display usersname)
+    6) add name of user sent a message and you when you sent ✅
 */
 
 
@@ -43,7 +44,9 @@ io.on('connection', (socket: Socket) => {
     });
 
     socket.on('disconnect' , () => {
-        console.log('user disconnected:', socket.id);
+        const disconnectedUser = users.get(socket.id) || 'Anonymous';
+        console.log('user disconnected:', socket.id, disconnectedUser);
+        io.emit('user disconnected', disconnectedUser);
         users.delete(socket.id);
     });
 });
