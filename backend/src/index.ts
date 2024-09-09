@@ -23,7 +23,14 @@ const io = new Server(server,{
 
 const PORT = 6969;
 
+interface Room {
+    name:string;
+    password:string;
+    users: Set<string>;
+}
+
 const users = new Map<string, string>();
+const rooms: Map<string, Room> = new Map();
 
 io.on('connection', (socket: Socket) => {
     socket.on('set username', (username: string) => {
@@ -43,13 +50,62 @@ io.on('connection', (socket: Socket) => {
         io.emit('chat message', jsonData);
     });
 
-    socket.on('disconnect' , () => {
+    socket.on('create room', ({roomName, password}: {roomName: string, password: string}) => {
+        if(rooms.has(roomName)) {
+            socket.emit('room error', 'Room already exists');
+        } else {
+            rooms.set(roomName, {name:roomName, password, users: new Set()});
+            socket.emit('room created', roomName);
+        }
+    });
+
+    socket.on('join room', ({roomName,password} : {roomName:string, password: string}) => {
+        const room = rooms.get(roomName);
+        if(!room) {
+            socket.emit('room error', 'Room does not exist' );
+        } else if(room.password !== password) {
+            socket.emit('room error', 'Incorrect password');
+        } else {
+            socket.join(roomName);
+            room.users.add(socket.id);
+            socket.emit('room joined', roomName);
+            //broadcasting message to specific room
+            io.to(roomName).emit('user joined room', users.get(socket.id) || "Anonymous");
+
+        }
+    });
+
+    socket.on('leave room', (roomName: string) => {
+        socket.leave(roomName);
+        const room = rooms.get(roomName);
+        if(room) {
+            room.users.delete(socket.id);
+            io.to(roomName).emit('user left room', users.get(socket.id) || 'Anonymous');
+        }
+    })
+
+    socket.on('room message', ({ roomName, message }: { roomName: string, message: string }) => {
+        const userName = users.get(socket.id) || 'Anonymous';
+        io.to(roomName).emit('room message', { roomName, userName, message });
+    });
+
+    socket.on('disconnect', () => {
         const disconnectedUser = users.get(socket.id) || 'Anonymous';
         console.log('user disconnected:', socket.id, disconnectedUser);
         io.emit('user disconnected', disconnectedUser);
+        
+        // Remove user from all rooms
+        rooms.forEach((room, roomName) => {
+            if (room.users.has(socket.id)) {
+                room.users.delete(socket.id);
+                io.to(roomName).emit('user left room', disconnectedUser);
+            }
+        });
+        
         users.delete(socket.id);
     });
 });
+
 
 server.listen(PORT, () => {
     console.log('server listening on port', PORT);
