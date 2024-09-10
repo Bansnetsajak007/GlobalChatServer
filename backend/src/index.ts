@@ -7,11 +7,12 @@
     5)feature to see joined users in room (just display usersname)
     6) add name of user sent a message and you when you sent ✅
 */
-
-
 import express from 'express';
+import dotenv from 'dotenv';
 import http from 'http';
 import { Server, Socket } from 'socket.io';
+
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -21,7 +22,7 @@ const io = new Server(server,{
     },
 });
 
-const PORT = 6969;
+const PORT = process.env.PORT;
 
 interface Room {
     name:string;
