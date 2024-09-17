@@ -31,12 +31,20 @@ interface Room {
 }
 
 const users = new Map<string, string>();
+const customRoomUsers = new Map<string, string>();
 const rooms: Map<string, Room> = new Map();
+
 
 io.on('connection', (socket: Socket) => {
     socket.on('set username', (username: string) => {
         users.set(socket.id, username);
         console.log(`Username set for ${socket.id}: ${username}`);
+    });
+
+    //hanels the broadcast of userJoined in customRoom
+    socket.on('set roomusername', (username: string) => {
+        customRoomUsers.set(socket.id, username);
+        console.log(`{username} joined room!`);
     });
 
     socket.on('broadcast', () => {
@@ -86,7 +94,7 @@ io.on('connection', (socket: Socket) => {
     })
 
     socket.on('room message', ({ roomName, message }: { roomName: string, message: string }) => {
-        const userName = users.get(socket.id) || 'Anonymous';
+        const userName = customRoomUsers.get(socket.id) || 'Anonymous';
         io.to(roomName).emit('room message', { roomName, userName, message });
     });
 
