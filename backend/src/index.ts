@@ -43,7 +43,7 @@ io.on('connection', (socket: Socket) => {
 
     //hanels the broadcast of userJoined in customRoom
     socket.on('set roomusername', (username: string) => {
-        customRoomUsers.set(socket.id, username);
+        // customRoomUsers.set(socket.id, username);
         console.log(`{username} joined room!`);
     });
 
@@ -51,6 +51,15 @@ io.on('connection', (socket: Socket) => {
         const joinedUser = users.get(socket.id) || 'Anonymous';
         console.log(joinedUser);
         io.emit('broadcast', { joinedUserData: joinedUser });
+    })
+
+    socket.on('room broadcast', (roomName: string) => {
+        const room = rooms.get(roomName);
+        const joinedUser = customRoomUsers.get(socket.id) || 'Anonymous';
+        console.log(joinedUser);
+        console.log(room);
+        // io.to(roomName).emit('user joined room', users.get(socket.id) || "Anonymous");
+        io.to(roomName).emit('room broadcast', { joinedUserData: joinedUser });
     })
 
     socket.on('chat message', (message: string) => {
@@ -64,7 +73,8 @@ io.on('connection', (socket: Socket) => {
             socket.emit('room error', 'Room already exists');
         } else {
             rooms.set(roomName, {name:roomName, password, users: new Set()});
-            socket.emit('room created', roomName);
+            const jsonData = {roomName, password};
+            socket.emit('create room', jsonData);
         }
     });
 
